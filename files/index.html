@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Money Manager Lite</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Tambahkan library jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body data-theme="light">
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-wallet"></i>
+                    <span>Money Manager</span>
+                </div>
+            </div>
+            
+            <div class="user-info">
+                <div class="avatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <h4 id="username">Pengguna</h4>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-target="dashboard">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-target="transactions">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Transaksi</span>
+                </a>
+                <a href="#" class="nav-item" data-target="add">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Tambah</span>
+                </a>
+                <a href="#" class="nav-item" data-target="reports">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Laporan</span>
+                </a>
+                <a href="#" class="nav-item" data-target="settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Pengaturan</span>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="sidebar-stats">
+                    <div class="stat-item">
+                        <div class="stat-label">Saldo</div>
+                        <div class="stat-value" id="sidebarBalance">Rp 0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Transaksi</div>
+                        <div class="stat-value" id="sidebarTransactions">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Auto-refresh</div>
+                        <div class="stat-value" id="autoRefreshStatus">ON</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <header class="top-bar">
+                <button class="menu-toggle" id="menuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Cari transaksi...">
+                </div>
+                
+                <div class="user-menu">
+                    <button class="btn-icon" id="refreshBtn" title="Refresh">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <button class="btn-icon" id="themeToggle" title="Ganti tema">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <div class="auto-refresh-indicator" id="autoRefreshIndicator" title="Auto-refresh aktif">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content Sections -->
+            <!-- Dashboard -->
+            <section id="dashboard" class="content-section active">
+                <div class="section-header">
+                    <h1>Dashboard</h1>
+                    <div style="display: flex; gap: 1rem;">
+                        <button class="btn btn-primary" data-target="add">
+                            <i class="fas fa-plus"></i> Transaksi Baru
+                        </button>
+                        <button class="btn btn-danger" onclick="exportDashboardToPDF()">
+                            <i class="fas fa-file-pdf"></i> Export PDF
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card income">
+                        <div class="stat-header">
+                            <div class="stat-title">Pemasukan Bulan Ini</div>
+                            <div class="stat-icon">
+                                <i class="fas fa-arrow-down"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="monthlyIncome">Rp 0</div>
+                        <div class="stat-trend" id="incomeTrend">+0% dari bulan lalu</div>
+                    </div>
+                    
+                    <div class="stat-card expense">
+                        <div class="stat-header">
+                            <div class="stat-title">Pengeluaran Bulan Ini</div>
+                            <div class="stat-icon">
+                                <i class="fas fa-arrow-up"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="monthlyExpense">Rp 0</div>
+                        <div class="stat-trend" id="expenseTrend">+0% dari bulan lalu</div>
+                    </div>
+                    
+                    <div class="stat-card balance">
+                        <div class="stat-header">
+                            <div class="stat-title">Saldo Saat Ini</div>
+                            <div class="stat-icon">
+                                <i class="fas fa-balance-scale"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="currentBalance">Rp 0</div>
+                        <div class="stat-trend" id="balanceTrend">Stabil</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-title">Total Transaksi</div>
+                            <div class="stat-icon">
+                                <i class="fas fa-exchange-alt"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="totalTransactions">0</div>
+                        <div class="stat-trend">Semua waktu</div>
+                    </div>
+                </div>
+                
+                <!-- Charts -->
+                <div class="charts-container">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Pemasukan vs Pengeluaran</h3>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <select class="form-control" id="chartPeriod" style="width: auto;">
+                                    <option value="month">Bulan Ini</option>
+                                    <option value="year">Tahun Ini</option>
+                                    <option value="week">Minggu Ini</option>
+                                </select>
+                                <button class="btn-icon" onclick="exportChartToPDF()" title="Export grafik ke PDF">
+                                    <i class="fas fa-file-export"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <canvas id="incomeExpenseChart"></canvas>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Pengeluaran per Kategori</h3>
+                            <button class="btn-icon" onclick="exportCategoryChartToPDF()" title="Export grafik ke PDF">
+                                <i class="fas fa-file-export"></i>
+                            </button>
+                        </div>
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Recent Transactions -->
+                <div class="recent-transactions">
+                    <div class="section-header">
+                        <h3>Transaksi Terbaru</h3>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <a href="#" data-target="transactions" class="btn btn-outline">Lihat Semua</a>
+                            <button class="btn btn-outline" onclick="exportRecentToPDF()">
+                                <i class="fas fa-file-pdf"></i> Export
+                            </button>
+                        </div>
+                    </div>
+                    <div class="transaction-list" id="recentTransactionsList">
+                        <!-- Transactions will be loaded here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Transactions -->
+            <section id="transactions" class="content-section">
+                <div class="section-header">
+                    <h1>Daftar Transaksi</h1>
+                    <button class="btn btn-primary" data-target="add">
+                        <i class="fas fa-plus"></i> Tambah
+                    </button>
+                </div>
+                
+                <!-- Filters -->
+                <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                    <select class="form-control" id="filterType" style="flex: 1; min-width: 150px;">
+                        <option value="all">Semua Jenis</option>
+                        <option value="income">Pemasukan</option>
+                        <option value="expense">Pengeluaran</option>
+                    </select>
+                    <select class="form-control" id="filterCategory" style="flex: 1; min-width: 150px;">
+                        <option value="all">Semua Kategori</option>
+                        <!-- Categories will be populated -->
+                    </select>
+                    <input type="date" class="form-control" id="filterDate" style="flex: 1; min-width: 150px;">
+                    <select class="form-control" id="sortSelect" style="flex: 1; min-width: 150px;">
+                        <option value="date-desc">Tanggal (Terbaru)</option>
+                        <option value="date-asc">Tanggal (Terlama)</option>
+                        <option value="amount-desc">Jumlah (Terbesar)</option>
+                        <option value="amount-asc">Jumlah (Terkecil)</option>
+                    </select>
+                </div>
+                
+                <!-- Table -->
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Deskripsi</th>
+                                <th>Kategori</th>
+                                <th>Jenis</th>
+                                <th>Jumlah</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionsTableBody">
+                            <!-- Transactions will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <div class="pagination">
+                    <button class="pagination-btn" id="prevPage">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <span id="pageInfo">Halaman 1</span>
+                    <button class="pagination-btn" id="nextPage">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                
+                <!-- Export Buttons -->
+                <div style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: flex-end;">
+                    <button class="btn btn-outline" onclick="exportFilteredToPDF()">
+                        <i class="fas fa-file-pdf"></i> Export Filtered
+                    </button>
+                    <button class="btn btn-danger" onclick="exportAllToPDF()">
+                        <i class="fas fa-file-pdf"></i> Export All to PDF
+                    </button>
+                </div>
+            </section>
+
+            <!-- Add Transaction -->
+            <section id="add" class="content-section">
+                <div class="section-header">
+                    <h1>Tambah Transaksi</h1>
+                    <button class="btn btn-outline" onclick="navigateTo('transactions')">
+                        <i class="fas fa-arrow-left"></i> Kembali
+                    </button>
+                </div>
+                
+                <div class="form-container">
+                    <!-- Step 1: Type Selection -->
+                    <div class="form-step active" id="step1">
+                        <h3 style="margin-bottom: 1rem;">Pilih Jenis Transaksi</h3>
+                        <div class="type-selector">
+                            <div class="type-card" data-type="income">
+                                <div class="type-icon income">
+                                    <i class="fas fa-arrow-down"></i>
+                                </div>
+                                <h4>Pemasukan</h4>
+                                <p>Uang masuk ke dompet</p>
+                            </div>
+                            <div class="type-card" data-type="expense">
+                                <div class="type-icon expense">
+                                    <i class="fas fa-arrow-up"></i>
+                                </div>
+                                <h4>Pengeluaran</h4>
+                                <p>Uang keluar dari dompet</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 2: Details -->
+                    <div class="form-step" id="step2">
+                        <h3 style="margin-bottom: 1rem;">Detail Transaksi</h3>
+                        
+                        <form id="transactionForm">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="amount">Jumlah (Rp)</label>
+                                    <input type="number" id="amount" class="form-control" required min="0">
+                                    <div class="quick-amounts">
+                                        <button type="button" class="quick-amount" data-amount="50000">50K</button>
+                                        <button type="button" class="quick-amount" data-amount="100000">100K</button>
+                                        <button type="button" class="quick-amount" data-amount="500000">500K</button>
+                                        <button type="button" class="quick-amount" data-amount="1000000">1 JT</button>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="category">Kategori</label>
+                                    <select id="category" class="form-control" required>
+                                        <option value="">Pilih Kategori</option>
+                                        <!-- Categories will be populated -->
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="date">Tanggal</label>
+                                    <input type="date" id="date" class="form-control" required>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="description">Deskripsi (Opsional)</label>
+                                <textarea id="description" class="form-control" rows="3"></textarea>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button type="button" class="btn btn-outline" id="backStep">
+                                    <i class="fas fa-arrow-left"></i> Kembali
+                                </button>
+                                <button type="submit" class="btn btn-success" id="saveTransaction">
+                                    <i class="fas fa-save"></i> Simpan
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Reports -->
+            <section id="reports" class="content-section">
+                <div class="section-header">
+                    <h1>Laporan Keuangan</h1>
+                </div>
+                
+                <div class="form-container">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="reportStart">Dari Tanggal</label>
+                            <input type="date" id="reportStart" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="reportEnd">Sampai Tanggal</label>
+                            <input type="date" id="reportEnd" class="form-control">
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 0.5rem; margin: 1rem 0;">
+                        <button class="btn btn-primary" onclick="generateReport()">
+                            <i class="fas fa-chart-bar"></i> Buat Laporan
+                        </button>
+                        <button class="btn btn-danger" onclick="exportToPDF()">
+                            <i class="fas fa-file-pdf"></i> Export ke PDF
+                        </button>
+                        <button class="btn btn-outline" onclick="exportChartToPDF()">
+                            <i class="fas fa-chart-line"></i> Export Grafik
+                        </button>
+                    </div>
+                    
+                    <div class="stats-grid" style="margin-top: 2rem;">
+                        <div class="stat-card income">
+                            <div class="stat-title">Total Pemasukan</div>
+                            <div class="stat-value" id="reportIncome">Rp 0</div>
+                        </div>
+                        <div class="stat-card expense">
+                            <div class="stat-title">Total Pengeluaran</div>
+                            <div class="stat-value" id="reportExpense">Rp 0</div>
+                        </div>
+                        <div class="stat-card balance">
+                            <div class="stat-title">Net Income</div>
+                            <div class="stat-value" id="reportBalance">Rp 0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-title">Jumlah Transaksi</div>
+                            <div class="stat-value" id="reportCount">0</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Report Table -->
+                    <div style="margin-top: 2rem;">
+                        <h3>Detail Transaksi</h3>
+                        <div class="table-container" style="max-height: 400px; overflow-y: auto;">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th>Kategori</th>
+                                        <th>Jenis</th>
+                                        <th>Jumlah</th>
+                                        <th>Deskripsi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reportTableBody">
+                                    <!-- Report data will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings -->
+            <section id="settings" class="content-section">
+                <div class="section-header">
+                    <h1>Pengaturan</h1>
+                </div>
+                
+                <div class="form-container">
+                    <div class="settings-tabs">
+                        <button class="settings-tab active" data-tab="general">Umum</button>
+                        <button class="settings-tab" data-tab="data">Data</button>
+                        <button class="settings-tab" data-tab="account">Akun</button>
+                        <button class="settings-tab" data-tab="auto">Auto</button>
+                    </div>
+                    
+                    <!-- General Settings -->
+                    <div class="settings-panel active" id="generalPanel">
+                        <div class="form-group">
+                            <label for="userName">Nama</label>
+                            <input type="text" id="userName" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="currency">Mata Uang</label>
+                            <select id="currency" class="form-control">
+                                <option value="IDR">IDR (Rp)</option>
+                                <option value="USD">USD ($)</option>
+                                <option value="EUR">EUR (€)</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" id="saveProfile">
+                            <i class="fas fa-save"></i> Simpan
+                        </button>
+                    </div>
+                    
+                    <!-- Data Settings -->
+                    <div class="settings-panel" id="dataPanel">
+                        <div class="settings-actions">
+                            <div class="action-card" id="exportData">
+                                <i class="fas fa-download"></i>
+                                <div>Export Data</div>
+                                <small>JSON format</small>
+                            </div>
+                            <div class="action-card" id="importData">
+                                <i class="fas fa-upload"></i>
+                                <div>Import Data</div>
+                                <small>Dari file JSON</small>
+                            </div>
+                            <div class="action-card" id="clearData">
+                                <i class="fas fa-trash"></i>
+                                <div>Hapus Data</div>
+                                <small>Permanen</small>
+                            </div>
+                            <div class="action-card" onclick="exportAllToPDF()">
+                                <i class="fas fa-file-pdf"></i>
+                                <div>Export PDF</div>
+                                <small>Semua transaksi</small>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 2rem; padding: 1rem; background: var(--bg-body); border-radius: var(--border-radius);">
+                            <h4 style="margin-bottom: 0.5rem;">Info Penyimpanan</h4>
+                            <p>Total Transaksi: <strong id="totalDataCount">0</strong></p>
+                            <p>Ukuran Data: <strong id="dataSize">0 KB</strong></p>
+                            <p>Terakhir Diperbarui: <strong id="lastUpdated">-</strong></p>
+                        </div>
+                    </div>
+                    
+                    <!-- Account Settings -->
+                    <div class="settings-panel" id="accountPanel">
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="notifTransaction" checked>
+                                Notifikasi transaksi
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="autoSaveData" checked>
+                                Auto-save data
+                            </label>
+                        </div>
+                        <button class="btn btn-outline" id="logoutBtn">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </div>
+                    
+                    <!-- Auto Settings -->
+                    <div class="settings-panel" id="autoPanel">
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="autoRefreshToggle" checked>
+                                Auto-refresh data (1 menit)
+                            </label>
+                            <small style="display: block; margin-top: 0.25rem; color: var(--text-secondary);">
+                                Data akan diperbarui otomatis setiap 1 menit
+                            </small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="refreshInterval">Interval Refresh (menit)</label>
+                            <select id="refreshInterval" class="form-control">
+                                <option value="1">1 menit</option>
+                                <option value="2">2 menit</option>
+                                <option value="5">5 menit</option>
+                                <option value="10">10 menit</option>
+                                <option value="15">15 menit</option>
+                                <option value="30">30 menit</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="autoExportBackup">
+                                Auto-export backup
+                            </label>
+                            <small style="display: block; margin-top: 0.25rem; color: var(--text-secondary);">
+                                Buat backup otomatis setiap hari
+                            </small>
+                        </div>
+                        
+                        <div style="padding: 1rem; background: var(--bg-body); border-radius: var(--border-radius); margin-top: 1rem;">
+                            <h4 style="margin-bottom: 0.5rem;">Status Auto-refresh</h4>
+                            <p>Status: <strong id="autoRefreshStatusText">Aktif</strong></p>
+                            <p>Interval: <strong id="autoRefreshIntervalText">1 menit</strong></p>
+                            <p>Refresh berikutnya: <strong id="nextRefreshTime">-</strong></p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+</body>
+</html>
